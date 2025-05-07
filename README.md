@@ -1,1 +1,1 @@
-# Multi-Cycle-MIPS-16bit-using-vhdl
+# Multi-Cycle-MIPS-32bit-using-vhdl
