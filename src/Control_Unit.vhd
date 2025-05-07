@@ -16,11 +16,11 @@ end entity;
 architecture rtl of control_unit is
 -- control_word returns the out of given op and funct in vector then i can assign each out with its index in the vector
     signal control_word: std_logic_vector(13 downto 0);	 
-	signal alu_control_signal:std_logic_vector(2 downto 0);
+	signal alu_control_signal:std_logic_vector(3 downto 0);
 begin  
 	
-	alu_controller :entity  alu_controller 
-		port map(ALUOp => ALUOp , funct => funct , ALUControl => alu_control_signal);
+	alu_controller :entity  ALU_Control_Unit 
+		port map(ALU_Operation => ALUOp , Function_Code => funct , ALU_Control_Signal => alu_control_signal);
 
     -- Control word generation based on Op and Funct
     with Op select
