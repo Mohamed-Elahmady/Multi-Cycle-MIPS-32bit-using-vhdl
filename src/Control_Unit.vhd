@@ -16,7 +16,7 @@ entity control_unit is
 end entity;
 
 architecture rtl of control_unit is	 
-		signal ALU_Control: std_logic_vector(3 downto 0);
+		
 
     type state_type is (
         Fetch, Decode,
@@ -146,12 +146,6 @@ begin
         end case;
     end process;
 
-    -- ALU Control
-    alu_ctrl: entity work.ALU_Control_Unit
-        port map (
-            ALU_Operation => ALUOp,
-            Function_Code => Funct,
-            ALU_Control_Signal => ALU_Control
-        );
+   
 
 end architecture;

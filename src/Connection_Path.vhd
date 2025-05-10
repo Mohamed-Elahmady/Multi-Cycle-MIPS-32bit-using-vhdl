@@ -19,7 +19,7 @@ architecture connection of Connection_Path is
 	signal MemAddress : std_logic_vector(31 downto 0);	  
 	signal MemReaddata,MemWritedata:  std_logic_vector(31 downto 0);  --memory
 	signal MemData :  std_logic_vector(31 downto 0);  
-	signal instruction ,Read_Data1,Read_Data2 : std_logic_vector(31 downto 0);	
+	signal instruction ,Read_Data1,Read_Data2,A_Out,B_Out : std_logic_vector(31 downto 0);	
 	
 	
 	signal data_in ,  data_out : std_logic_vector(31 downto 0);	 --MDR
@@ -53,7 +53,7 @@ architecture connection of Connection_Path is
 	
 	signal Alu_control_out : std_logic_vector(3 downto 0);
 	
-	
+	constant FOUR : std_logic_vector(31 downto 0) := x"00000004";
 	
 begin  		 
 	
@@ -288,11 +288,30 @@ begin
 		----------------------------------------------------------------
 		--15 A and B registers 
 		
-			--Reg_A : entity 
+		Reg_A : entity Register_Generic	
+				generic map (
+       				  WIDTH => 32
+   						 )
+    			port map (
+       					 clk    => clk,
+        				 rst    => rst,
+                         load   => '1',  
+                         input  => Read_Data1,
+                         output => A_Out
+                           );
 	
 	
-			--Reg_B :	entity 	 
-		
+			Reg_B :	entity Register_Generic	 
+				  generic map (
+       				   WIDTH => 32
+   						  )
+   				  port map (
+    				    clk    => clk,
+         			    rst    => rst,
+                        load   => '1',  
+                        input  => Read_Data2,
+                        output => B_Out
+                          );
 		
 		----------------------------------------------------------------
 		--16 Alu_ Muxes	  
@@ -304,7 +323,7 @@ begin
 		  
 		  port map(
    					input0 => CurrentPC,
-    				input1 => Read_Data1, 
+    				input1 => A_Out, 
     				sel    => ALUSrcA,                         
     				output => Mux_A_out 
   			);
@@ -315,8 +334,8 @@ begin
 		  )
 		  
 		  port map(
-   					input0 => Read_Data2,
-    				input1 => x"00000004", 		---4
+   					input0 => B_Out,
+    				input1 => FOUR ,
 					input2 => input_data,
 					input3 => output_data,
     				sel    => ALUSrcB,                         
