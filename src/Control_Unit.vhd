@@ -1,65 +1,151 @@
 library ieee;
 use ieee.std_logic_1164.all;
+use ieee.std_logic_unsigned.all;
 
-entity control_unit is 
-   port (
-   Op, Funct: in std_logic_vector(5 downto 0);	 
-   ALUOp: inout std_logic_vector(1 downto 0);
-   -- mux selects
-   ALUSrcB: out std_logic_vector(1 downto 0);
-   MemtoReg, RegDst, LorD, PCSrc, ALUSrcA: out std_logic;
-   -- Register Enables
-   IRWrite, MemWrite, PCWrite, Branch, RegWrite: out std_logic
-   );	
-end entity;	
+entity control_unit is
+    port (
+        CLK, Reset: in std_logic;
+        Op, Funct: in std_logic_vector(5 downto 0);
+	   	ALUOp: inout std_logic_vector(1 downto 0);
+        PCSrc: out std_logic_vector(1 downto 0);
+        ALUSrcB: out std_logic_vector(1 downto 0);
+        MemtoReg, RegDst, LorD, ALUSrcA: out std_logic;
 
-architecture rtl of control_unit is
--- control_word returns the out of given op and funct in vector then i can assign each out with its index in the vector
-    signal control_word: std_logic_vector(13 downto 0);	 
-	signal alu_control_signal:std_logic_vector(3 downto 0);
-begin  
-	
-	alu_controller :entity  ALU_Control_Unit 
-		port map(ALU_Operation => ALUOp , Function_Code => funct , ALU_Control_Signal => alu_control_signal);
+        IRWrite, MemWrite, PCWrite, PCWriteCond, RegWrite, MemRead: out std_logic
+    );
+end entity;
 
-    -- Control word generation based on Op and Funct
-    with Op select
-        control_word <= 
-            "00101011000011" when "100011", -- lw
-            "0010XX10100000" when "101011", -- sw
-            "10000101000011" when "000000", -- R-type (default for add)
-            "0100XX01110000" when "000100", -- beq
-            "XXXXXXXX001000" when "000010", -- jump
-            (others => '0') when others;
+architecture rtl of control_unit is	 
+		
 
-    -- If the Op is R-type, we need to check the Funct field for specific operations
-    process(Op, Funct)
+    type state_type is (
+        Fetch, Decode,
+        MemAdr, MemReadS1, MemReadS2,
+        MemWriteS,
+        ExecuteR, WriteR,
+        ExecuteI, WriteI,
+        Branch, Jump
+    );
+    signal state, next_state: state_type;
+    --signal ALUOp: std_logic_vector(1 downto 0);
+
+begin
+
+    -- FSM state register
+    process(CLK, Reset)
     begin
-        if Op = "000000" then -- R-type
-            case Funct is
-                when "100000" =>  -- add
-                    control_word <= "10000101000011"; -- R-type add control word
-                when "100010" =>  -- sub
-                    control_word <= "10000101000010"; -- R-type sub control word
-                -- Add more cases for other R-type instructions
-                when others =>
-                    control_word <= "10000101000011"; -- Default: R-type add
-            end case;
+        if Reset = '1' then
+            state <= Fetch;
+        elsif rising_edge(CLK) then
+            state <= next_state;
         end if;
     end process;
 
-    -- Map bits from control_word to output ports
-    ALUOp     <= control_word(13 downto 12);
-    ALUSrcB   <= control_word(11 downto 10);
-    MemtoReg  <= control_word(9);
-    RegDst    <= control_word(8);
-    LorD      <= control_word(7);
-    PCSrc     <= control_word(6);
-    ALUSrcA   <= control_word(5);
-    IRWrite   <= control_word(4);
-    MemWrite  <= control_word(3);
-    PCWrite   <= control_word(2);
-    Branch    <= control_word(1);
-    RegWrite  <= control_word(0);
+    -- Next-state logic
+    process(state, Op)
+    begin
+        case state is
+            when Fetch => next_state <= Decode;
+
+            when Decode =>
+                case Op is
+                    when "100011" => next_state <= MemAdr;      -- lw
+                    when "101011" => next_state <= MemAdr;      -- sw
+                    when "000000" => next_state <= ExecuteR;    -- R-type
+                    when "001000" => next_state <= ExecuteI;    -- addi
+                    when "000100" => next_state <= Branch;      -- beq
+                    when "000010" => next_state <= Jump;        -- jump
+                    when others => next_state <= Fetch;
+                end case;
+
+            when MemAdr =>
+                if Op = "100011" then
+                    next_state <= MemReadS1;
+                else
+                    next_state <= MemWriteS;
+                end if;
+
+            when MemReadS1 => next_state <= MemReadS2;
+            when MemReadS2 => next_state <= Fetch;
+            when MemWriteS => next_state <= Fetch;
+            when ExecuteR => next_state <= WriteR;
+            when WriteR    => next_state <= Fetch;
+            when ExecuteI  => next_state <= WriteI;
+            when WriteI    => next_state <= Fetch;
+            when Branch    => next_state <= Fetch;
+            when Jump      => next_state <= Fetch;
+        end case;
+    end process;
+
+    -- Output logic
+    process(state, Op, Funct)
+    begin
+        -- default values
+        IRWrite <= '0'; MemRead <= '0'; MemWrite <= '0';
+        PCWrite <= '0'; PCWriteCond <= '0'; RegWrite <= '0';
+        MemtoReg <= '0'; RegDst <= '0'; LorD <= '0';
+        ALUSrcA <= '0'; ALUSrcB <= "00"; PCSrc <= "00";
+        ALUOp <= "00"; 
+
+        case state is
+            when Fetch =>
+                MemRead <= '1';
+                IRWrite <= '1';
+                ALUSrcB <= "01";
+                PCWrite <= '1';
+                PCSrc <= "00";
+                ALUOp <= "00";
+
+            when Decode =>
+                ALUSrcB <= "11";
+                ALUOp <= "00";
+
+            when MemAdr =>
+                ALUSrcA <= '1';
+                ALUSrcB <= "10";
+                ALUOp <= "00";
+
+            when MemReadS1 =>
+                MemRead <= '1';
+                LorD <= '1';
+
+            when MemReadS2 =>
+                RegWrite <= '1';
+                MemtoReg <= '1';
+
+            when MemWriteS =>
+                MemWrite <= '1';
+                LorD <= '1';
+
+            when ExecuteR =>
+                ALUSrcA <= '1';
+                ALUOp <= "10";
+
+            when WriteR =>
+                RegDst <= '1';
+                RegWrite <= '1';
+
+            when ExecuteI =>
+                ALUSrcA <= '1';
+                ALUSrcB <= "10";
+                ALUOp <= "00";
+
+            when WriteI =>
+                RegWrite <= '1';
+
+            when Branch =>
+                ALUSrcA <= '1';
+                ALUOp <= "01";
+                PCSrc <= "01";
+                PCWriteCond <= '1';
+
+            when Jump =>
+                PCSrc <= "10";
+                PCWrite <= '1';
+
+        end case;
+    end process;
+
+   
 
 end architecture;
