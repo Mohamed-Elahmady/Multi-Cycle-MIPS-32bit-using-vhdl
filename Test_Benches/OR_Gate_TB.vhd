@@ -1,0 +1,36 @@
+library ieee;
+use ieee.std_logic_1164.all;
+
+entity OR_Gate_tb is
+end OR_Gate_tb;
+
+architecture behaviour of OR_Gate_tb is
+    signal A, B : std_logic := '0';
+    signal C    : std_logic;
+begin
+    OR_Gate_inst : entity work.OR_Gate
+        port map (
+            A => A,
+            B => B,
+            C => C
+        );
+
+    process
+    begin
+        A <= '0'; B <= '0';
+        wait for 10 ns;
+
+        A <= '0'; B <= '1';
+        wait for 10 ns;
+
+        A <= '1'; B <= '0';
+        wait for 10 ns;
+
+        A <= '1'; B <= '1';
+        wait for 10 ns;
+
+        wait;
+    end process;
+
+end behaviour;
+
