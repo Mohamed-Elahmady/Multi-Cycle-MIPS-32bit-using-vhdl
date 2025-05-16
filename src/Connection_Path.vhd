@@ -29,7 +29,7 @@ architecture connection of Connection_Path is
 	signal ALU_OUT  :  STD_LOGIC_VECTOR(31 downto 0);	--ALU OUT	
 	
 	
-	signal  or_to_and_pc, and_to_pc: std_logic;	
+	signal  or_to_pc, and_to_or_to_pc: std_logic;	
 	signal  input_data ,output_data : std_logic_vector (31 downto 0);  --shifht left IR
 	signal  output_data_Mux : std_logic_vector (27 downto 0);  --shifht left PC  
 	signal  input_mux_2 : std_logic_vector (31 downto 0);  
@@ -41,8 +41,8 @@ architecture connection of Connection_Path is
    	signal PCSrc:  std_logic_vector(1 downto 0);
 
 	--register
-	signal write_Data,Write_Register:  std_logic_vector(31 downto 0);	 
-	
+	signal write_Data:  std_logic_vector(31 downto 0);	 
+     signal Write_Register: std_logic_vector(4 downto 0);	
 	--Ir signals 
 	signal 	RS   		             : std_logic_vector(4 downto 0);  -- RS
 	signal 	RT  		         : std_logic_vector(4 downto 0);  -- RT
@@ -107,29 +107,33 @@ begin
     				sel    => PCSrc,                         
     				output => mux3_1topc
   			); 
-	------------------------------------------------------------	
-		--4 or_to_pc
-		or_topc : entity OR_Gate 
-			port map(
-			A => Zero, 
-			B => PCWriteCond,
-			C => or_to_and_pc
-		);
+
 	--------------------------------------------------------------	
-		--5  and_to_pc
+		--4  and_to_pc
 		and_topc : entity AND_Gate 
 			port map(
-			A => or_to_and_pc, 
+
+			A => Zero, 
+			B => PCWriteCond,
+			C => and_to_or_to_pc
+			
+		);	
+	------------------------------------------------------------	
+		--5 or_to_pc
+		or_topc : entity OR_Gate 
+			port map(
+			A => and_to_or_to_pc, 
 			B => PCWrite,
-			C => and_to_pc
-		);
+			C => or_to_pc
+		);		
 	----------------------------------------------------------------	
+	
 	  	--6	  pc_instance
 	   	pc_instance	: entity PC 
 		port map (
 		clk         => clk,
         rst         => rst,
-       	PCWrite     => and_to_pc,
+       	PCWrite     => or_to_pc,
         ALUResult   => mux3_1topc,	
         CurrentPC   => CurrentPC
 		
@@ -182,8 +186,12 @@ begin
 						);
 	
 		 -------------------------------------------------------------
-		--10  instruction register instance 					  ---not finished 
+		--10  instruction register instance 					  
+		--------------------------------------------------------------
 		
+		Jump_Address  <= RS & RT & immediate ;	
+		
+		--------------------------------------------------------------
 		IR_instance : entity InstructionRegister	   
 						generic map (
 								W => 5,
@@ -200,7 +208,7 @@ begin
 								Register1   		     => RS,            -- RS 	Bits 25-21:
 								Register2  		         => RT,           -- RT 	 Bits 20-16
 								Destination_Register	 => RD,           -- RD	 Bits 15-11
-								Shift_Amount			 => shamt,        -- shamt  Bits 10-06
+								--Shift_Amount			 => shamt,        -- shamt  Bits 10-06
 								Function_Code			 => funct,	      -- funct	 Bits 05-00:
 								Immediate				 => immediate,    -- immediate	15-00:
 								Jump_Address			 => Jump_Address  -- jump rate	25-00:
@@ -226,7 +234,7 @@ begin
 		
 		IR_MUX_to_reg :	entity MUX2to1_Generic 
 		  generic map (
-		  			   WIDTH => 32 
+		  			   WIDTH => 5 
 		  )
 		  
 		  port map(
@@ -241,7 +249,7 @@ begin
 		MDR_MUX_to_reg: entity MUX2to1_Generic 
 		
 		  generic map (
-		  			   WIDTH => 32 
+		  			   WIDTH => 32
 		  )
 		  
 		  port map(

@@ -18,7 +18,7 @@ entity InstructionRegister is
 		Register1   		     :out std_logic_vector(W-1 downto 0);  -- RS
 		Register2  		         :out std_logic_vector(W-1 downto 0);  -- RT
 		Destination_Register	 :out std_logic_vector(W-1 downto 0);  -- RD
-		Shift_Amount			 :out std_logic_vector(W-1 downto 0);  -- shamt
+		--Shift_Amount			 :out std_logic_vector(W-1 downto 0);  -- shamt
 		Function_Code			 :out std_logic_vector(W downto 0);	   -- funct
 		Immediate				 :out std_logic_vector(X-1 downto 0);  -- immediate
 		Jump_Address			 :out std_logic_vector(Y-1 downto 0)   -- jump rate
@@ -44,7 +44,7 @@ begin
 	Register1   			<= instruction(Y-1 downto Y-5);	 -- Bits 25-21: RS
 	Register2   			<= instruction(Y-6 downto Y-10); -- Bits 20-16: RT
 	Destination_Register	<= instruction(X-1 downto X-5);	 -- Bits 15-11: RD
-	Shift_Amount			<= instruction(X-6 downto X-10); -- Bits 10-06: shamt
+	--Shift_Amount			<= instruction(X-6 downto X-10); -- Bits 10-06: shamt
 	Function_Code 			<= instruction(W downto 0);		 -- Bits 05-00: funct
 	Immediate 				<= instruction(X-1 downto 0);	 -- Bits 15-00: immediate
 	Jump_Address 			<= instruction(Y-1 downto 0);	 -- Bits 25-00: jump rate

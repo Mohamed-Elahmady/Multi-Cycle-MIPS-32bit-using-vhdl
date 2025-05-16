@@ -8,7 +8,7 @@ architecture test of MUX4to1_TB is
 
   -- Signals
   signal input0, input1, input2, input3 : std_logic_vector(31 downto 0);
-  signal sel : std_logic_vector(2 downto 0);
+  signal sel : std_logic_vector(1 downto 0);
   signal output : std_logic_vector(31 downto 0);
 
 begin
@@ -33,20 +33,20 @@ begin
     input2 <= x"00000003";
     input3 <= x"00000004";
 
-    sel <= "000";
+    sel <= "00";
     wait for 10 ns;
 
-    sel <= "001";
+    sel <= "01";
     wait for 10 ns;
 
-    sel <= "010";
+    sel <= "10";
     wait for 10 ns;
 
-    sel <= "011";
+    sel <= "11";
     wait for 10 ns;
 
-    sel <= "100";  -- invalid
-    wait for 10 ns;
+   
+    
 
     wait;
   end process;
