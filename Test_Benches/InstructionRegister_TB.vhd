@@ -12,7 +12,7 @@ architecture tb of InstructionRegister_tb is
     signal Register1          : std_logic_vector(4 downto 0);
     signal Register2          : std_logic_vector(4 downto 0);
     signal Destination_Register : std_logic_vector(4 downto 0);
-    signal Shift_Amount       : std_logic_vector(4 downto 0);
+   -- signal Shift_Amount       : std_logic_vector(4 downto 0);
     signal Function_Code      : std_logic_vector(5 downto 0);
     signal Immediate          : std_logic_vector(15 downto 0);
     signal Jump_Address       : std_logic_vector(25 downto 0);
@@ -32,7 +32,7 @@ architecture tb of InstructionRegister_tb is
             Register1            : out std_logic_vector(W-1 downto 0);
             Register2            : out std_logic_vector(W-1 downto 0);
             Destination_Register : out std_logic_vector(W-1 downto 0);
-            Shift_Amount         : out std_logic_vector(W-1 downto 0);
+           -- Shift_Amount         : out std_logic_vector(W-1 downto 0);
             Function_Code        : out std_logic_vector(W downto 0);
             Immediate            : out std_logic_vector(X-1 downto 0);
             Jump_Address         : out std_logic_vector(Y-1 downto 0)
@@ -45,7 +45,7 @@ begin
         port map (
             clk, IRWrite, MemData,
             OpCode, Register1, Register2,
-            Destination_Register, Shift_Amount,
+            Destination_Register, --Shift_Amount,
             Function_Code, Immediate, Jump_Address
         );
 
