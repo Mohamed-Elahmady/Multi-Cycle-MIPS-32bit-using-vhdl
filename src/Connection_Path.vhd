@@ -17,12 +17,9 @@ architecture connection of Connection_Path is
     signal IRWrite, MemWrite, PCWrite,MemRead,PCWriteCond, RegWrite: std_logic;   
 	
 	signal MemAddress : std_logic_vector(31 downto 0);	  
-	signal MemReaddata,MemWritedata:  std_logic_vector(31 downto 0);  --memory
-	signal MemData :  std_logic_vector(31 downto 0);  
-	signal instruction ,Read_Data1,Read_Data2,A_Out,B_Out : std_logic_vector(31 downto 0);	
-	
-	
-	signal data_in ,  data_out : std_logic_vector(31 downto 0);	 --MDR
+	signal MemReaddata:  std_logic_vector(31 downto 0);  --memory 
+	signal Read_Data1,Read_Data2,A_Out,B_Out : std_logic_vector(31 downto 0);	
+	signal data_out : std_logic_vector(31 downto 0);	 --MDR
 	signal ALU_Result  : std_logic_vector(31 downto 0);
     signal Zero : std_logic;   	
 	signal CurrentPC ,mux3_1topc  :  STD_LOGIC_VECTOR(31 downto 0);	
@@ -63,8 +60,8 @@ begin
 		port map (		   
 		CLK          => clk,
 		Reset         => rst,
-		Op           => instruction(31 downto 26),
-		Funct        =>	instruction(5 downto 0),
+		Op           => Op,
+		Funct        =>	Funct,
 		ALUOp	     => ALUOp,
    		ALUSrcB	     => ALUSrcB,
 		MemtoReg   	 => MemtoReg,
@@ -181,16 +178,12 @@ begin
 						MemRead		 =>	MemRead,
 						MemWrite	 => MemWrite,
 						Address      => MemAddress,
-						Write_Data   => MemWritedata,
+						Write_Data   => B_Out,
 						Read_Data    => MemReaddata
 						);
 	
 		 -------------------------------------------------------------
-		--10  instruction register instance 					  
-		--------------------------------------------------------------
-		
-		Jump_Address  <= RS & RT & immediate ;	
-		
+		--10  instruction register instance 
 		--------------------------------------------------------------
 		IR_instance : entity InstructionRegister	   
 						generic map (
@@ -208,7 +201,6 @@ begin
 								Register1   		     => RS,            -- RS 	Bits 25-21:
 								Register2  		         => RT,           -- RT 	 Bits 20-16
 								Destination_Register	 => RD,           -- RD	 Bits 15-11
-								--Shift_Amount			 => shamt,        -- shamt  Bits 10-06
 								Function_Code			 => funct,	      -- funct	 Bits 05-00:
 								Immediate				 => immediate,    -- immediate	15-00:
 								Jump_Address			 => Jump_Address  -- jump rate	25-00:
@@ -225,24 +217,24 @@ begin
        					 clk     =>clk,
       				     rst     =>rst,
         				 load    =>'1',
-       				     data_in => MemReaddata,
+       				     data_in =>MemReaddata,
         				 data_out=>data_out
    					 );
 						
 		-----------------------------------------------------------
 		--12 Muxes between IR and Register
 		
-		IR_MUX_to_reg :	entity MUX2to1_Generic 
-		  generic map (
-		  			   WIDTH => 5 
+		IR_MUX_to_reg :	entity MUX2to1_Generic 	
+			   generic map (
+		  			   WIDTH => 5
 		  )
 		  
 		  port map(
-   					input0 => instruction(20 downto 16),
-    				input1 => instruction(15 downto 11), 
+   					input0 => RT,
+    				input1 => RD, 
     				sel    => RegDst,                         
-    				output => Write_Register
-  			);	
+    				output => Write_Register 
+  			);
 			  
 			  ------------------------------------
 		  			
@@ -270,8 +262,8 @@ begin
             clk => clk,
             rst => rst,
             Reg_Write => RegWrite,
-            Read_Register1 => instruction(25 downto 21),
-            Read_Register2 => instruction(20 downto 16),
+            Read_Register1 => RS,
+            Read_Register2 => RT,
             Write_Register => Write_Register,
             write_Data => write_Data,
             Read_Data1 => Read_Data1,
